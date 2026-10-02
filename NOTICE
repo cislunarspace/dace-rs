@@ -1,0 +1,9 @@
+DACE 2.1 Copyright 2016 Politecnico di Milano and contributors
+Copyright 2014 Dinamica Srl.
+
+dace-rs is a derivative work: a pure Rust rewrite of DACE, the
+Differential Algebra Computational Toolbox (https://github.com/dacelib/dace).
+
+This product includes software developed at Politecnico di Milano
+(Department of Aerospace Science and Technology, Differential Algebra
+project). See THIRD_PARTY_NOTICES.md for additional netlib attributions.

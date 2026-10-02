@@ -1,0 +1,17 @@
+[package]
+name = "dace-rs"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+license = "Apache-2.0"
+repository = "https://github.com/cislunarspace/dace-rs"
+description = "Pure Rust implementation of DACE, the Differential Algebra Computational Toolbox"
+categories = ["mathematics", "science"]
+keywords = ["differential-algebra", "taylor", "polynomial", "dace"]
+
+[lib]
+name = "dace_rs"
+
+[dependencies]
+puruspe = "0.4"
+log = "0.4"
