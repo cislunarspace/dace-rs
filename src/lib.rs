@@ -36,6 +36,19 @@ pub use da::Da;
 pub use error::DaceError;
 pub use monomial::Monomial;
 
+/// The weighted sum `afac * a + bfac * b` (`daceWeightedSum`).
+///
+/// Unlike the C routine of the same name, this is aliasing-safe.
+///
+/// # Panics
+///
+/// Panics with [`DaceError`] when `a` and `b` belong to different DACE
+/// contexts.
+pub fn fma(a: &Da, afac: f64, b: &Da, bfac: f64) -> Da {
+    Da::assert_same_context(a, b);
+    kernels::weighted_sum(a, afac, b, bfac)
+}
+
 /// Tests mutate the process-global DACE context; serialize context-touching
 /// tests with this lock.
 #[cfg(test)]
