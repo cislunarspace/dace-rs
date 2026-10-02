@@ -34,6 +34,7 @@ use crate::error::{DaceError, codes};
 // Encoding/decoding machinery is wired into `Da` in Phase 2 and the
 // computation kernels in Phase 3; until then the fields are only exercised
 // by the tests below.
+#[derive(Debug)]
 #[allow(dead_code)]
 pub(crate) struct Context {
     pub nomax: u32,
@@ -292,6 +293,23 @@ pub(crate) fn pown(a: f64, b: u32) -> f64 {
         b >>= 1;
     }
     res
+}
+
+/// Raise integer `a` to the positive integer power `b` (the C library's
+/// `npown`), computed in `u64`. Callers guarantee the result fits the
+/// relevant table bound (it indexes `ia1`/`ia2`, both of length `lia+1`).
+pub(crate) fn npown_i64(a: u32, b: u32) -> u32 {
+    let mut res: u64 = 1;
+    let mut a: u64 = u64::from(a);
+    let mut b = b;
+    while b > 0 {
+        if b & 1 != 0 {
+            res *= a;
+        }
+        a *= a;
+        b >>= 1;
+    }
+    res as u32
 }
 
 /// Number of monomials of maximum order `no` in `nv` variables, i.e.
