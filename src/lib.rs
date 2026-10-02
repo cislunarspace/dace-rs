@@ -13,9 +13,9 @@
 //! dace_rs::init(20, 2).unwrap();
 //! let x = dace_rs::Da::variable(1);
 //! let y = dace_rs::Da::variable(2);
-//! let f = (x.clone() + y.clone()) * (x - y); // x^2 - y^2
+//! let f = (x.clone() * x.clone() + y).sin();
+//! // coefficient of x^2 in sin(x^2+y) at the origin is cos(0) = 1
 //! assert!((f.get_coefficient(&[2, 0]) - 1.0).abs() < 1e-14);
-//! assert_eq!(f.cons(), 0.0);
 //! ```
 
 pub mod context;
@@ -23,7 +23,7 @@ pub mod error;
 pub mod monomial;
 
 mod da;
-mod elementary;
+pub mod elementary;
 mod io;
 mod kernels;
 
@@ -33,8 +33,11 @@ pub use context::{
     truncation_order, version,
 };
 pub use da::Da;
+pub use elementary::{
+    acos, acosh, asin, asinh, atan, atan2, cbrt, cos, cosh, erf, erfc, exp, hypot, icrt, isrt, log,
+    log_base, log2, log10, modulo, powf, powi, root, round, sin, sinh, sqrt, tan, tanh, trunc,
+};
 pub use error::DaceError;
-pub use monomial::Monomial;
 
 /// The weighted sum `afac * a + bfac * b` (`daceWeightedSum`).
 ///
