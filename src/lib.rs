@@ -26,6 +26,7 @@ mod da;
 pub mod elementary;
 mod io;
 mod kernels;
+pub mod special;
 
 pub use context::{
     epsilon, init, initialized, machine_epsilon, max_monomials, max_order, max_variables,
@@ -37,7 +38,7 @@ pub use elementary::{
     acos, acosh, asin, asinh, atan, atan2, cbrt, cos, cosh, erf, erfc, exp, hypot, icrt, isrt, log,
     log_base, log2, log10, modulo, powf, powi, root, round, sin, sinh, sqrt, tan, tanh, trunc,
 };
-pub use error::DaceError;
+pub use special::{bessel_i, bessel_j, bessel_k, bessel_y, gamma, log_gamma, psi};
 
 /// The weighted sum `afac * a + bfac * b` (`daceWeightedSum`).
 ///
