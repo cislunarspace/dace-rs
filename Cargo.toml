@@ -15,3 +15,4 @@ name = "dace_rs"
 [dependencies]
 puruspe = "0.4"
 log = "0.4"
+parking_lot = "0.12"
