@@ -24,10 +24,11 @@ pub mod monomial;
 
 mod da;
 pub mod elementary;
+pub mod eval;
 mod io;
 mod kernels;
+pub mod norm;
 pub mod special;
-
 pub use context::{
     epsilon, init, initialized, machine_epsilon, max_monomials, max_order, max_variables,
     pop_truncation_order, push_truncation_order, set_epsilon, set_truncation_order,
@@ -38,6 +39,8 @@ pub use elementary::{
     acos, acosh, asin, asinh, atan, atan2, cbrt, cos, cosh, erf, erfc, exp, hypot, icrt, isrt, log,
     log_base, log2, log10, modulo, powf, powi, root, round, sin, sinh, sqrt, tan, tanh, trunc,
 };
+pub use eval::CompiledDa;
+pub use norm::{Interval, NormType};
 pub use special::{bessel_i, bessel_j, bessel_k, bessel_y, gamma, log_gamma, psi};
 
 /// The weighted sum `afac * a + bfac * b` (`daceWeightedSum`).
