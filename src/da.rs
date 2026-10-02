@@ -435,6 +435,100 @@ impl Da {
         multiply(self, self)
     }
 
+    /// Divide by `var^p`, when every monomial's exponent in `var` is at
+    /// least `p` (`daceDivideByVariable`): exact polynomial division on the
+    /// exponents, coefficients unchanged. `p == 0` returns a copy.
+    ///
+    /// Out-of-range variables warn and return zero. Division is impossible
+    /// when some exponent is too small (`p > nomax`, or the DA is non-zero
+    /// with insufficient exponents).
+    ///
+    /// # Panics
+    ///
+    /// Panics with [`DaceError`] code 642 ("Inverse does not exists") when
+    /// the division is impossible on a non-zero DA.
+    pub fn divide_variable(&self, var: u32, p: u32) -> Da {
+        let ctx = &self.ctx;
+        if !(1..=ctx.nvmax).contains(&var) {
+            log::warn!(
+                "DACE error 624: invalid independent variable {var} in divide_variable; returning zero DA"
+            );
+            return Da::new();
+        }
+        if p == 0 {
+            return self.clone();
+        }
+        if self.terms.is_empty() {
+            return Da::new();
+        }
+        if p > ctx.nomax {
+            crate::error::dace_panic(642, "Inverse does not exists");
+        }
+        let ibase = ctx.nomax + 1;
+        let j = if var > ctx.nv1 {
+            var - 1 - ctx.nv1
+        } else {
+            var - 1
+        };
+        let idiv = crate::context::npown_i64(ibase, j);
+        let in_second_half = var > ctx.nv1;
+        let mut terms = Vec::with_capacity(self.terms.len());
+        for t in &self.terms {
+            let ic1 = ctx.ie1[t.idx as usize];
+            let ic2 = ctx.ie2[t.idx as usize];
+            let ipow = if in_second_half {
+                (ic2 / idiv) % ibase
+            } else {
+                (ic1 / idiv) % ibase
+            };
+            if ipow < p {
+                crate::error::dace_panic(642, "Inverse does not exists");
+            }
+            let idx = if in_second_half {
+                ctx.ia1[ic1 as usize] + ctx.ia2[(ic2 - p * idiv) as usize]
+            } else {
+                ctx.ia1[(ic1 - p * idiv) as usize] + ctx.ia2[ic2 as usize]
+            };
+            terms.push(RawTerm { idx, c: t.c });
+        }
+        Da {
+            ctx: ctx.clone(),
+            terms,
+        }
+    }
+
+    /// Multiply with `other` monomial-by-monomial: the coefficient-wise
+    /// product over matching monomial indices (`daceMultiplyMonomials`).
+    pub fn multiply_monomials(&self, other: &Da) -> Da {
+        Da::assert_same_context(self, other);
+        let mut terms = Vec::new();
+        let mut ib = other.terms.iter().peekable();
+        'outer: for ta in &self.terms {
+            // Advance b to the first term with idx >= ta.idx (as in C).
+            while let Some(tb) = ib.peek() {
+                if tb.idx < ta.idx {
+                    ib.next();
+                } else {
+                    break;
+                }
+            }
+            match ib.peek() {
+                Some(tb) if tb.idx == ta.idx => {
+                    terms.push(RawTerm {
+                        idx: ta.idx,
+                        c: ta.c * tb.c,
+                    });
+                }
+                Some(_) => continue 'outer,
+                None => break 'outer,
+            }
+        }
+        Da {
+            ctx: self.ctx.clone(),
+            terms,
+        }
+    }
+
     pub(crate) fn assert_same_context(a: &Da, b: &Da) {
         if !Arc::ptr_eq(&a.ctx, &b.ctx) {
             std::panic::panic_any(crate::error::DaceError::new(
@@ -781,5 +875,91 @@ mod tests {
 
         // neg
         assert_eq!((-f.clone()).get_coefficient(&[1, 0]), -1.0);
+    }
+
+    #[test]
+    fn multiplication_truncation_and_division() {
+        let _g = CONTEXT_LOCK.lock();
+        crate::context::init(6, 3).unwrap();
+        let x = Da::variable(1);
+        let y = Da::variable(2);
+        let z = Da::variable(3);
+
+        // (x*y)*(x*y) == x^2 y^2
+        let xy = x.clone() * y.clone();
+        let r = xy.clone() * xy.clone();
+        assert!((r.get_coefficient(&[2, 2, 0]) - 1.0).abs() < 1e-15);
+        assert_eq!(r.size(), 1);
+
+        // x*x*x == x^3 at order 3
+        let xxx = x.clone() * x.clone() * x.clone();
+        assert!((xxx.get_coefficient(&[3, 0, 0]) - 1.0).abs() < 1e-15);
+        assert_eq!(xxx.size(), 1);
+
+        // associativity on random Das
+        for trial in 0..5 {
+            let a = Da::random(-0.4);
+            let b = Da::random(-0.4);
+            let c = Da::random(-0.4);
+            let ab_c = (a.clone() * b.clone()) * c.clone();
+            let a_bc = a.clone() * (b.clone() * c.clone());
+            for (m1, m2) in ab_c.iter_monomials().zip(a_bc.iter_monomials()) {
+                assert_eq!(m1.jj, m2.jj);
+                let denom = m1.c.abs().max(1.0);
+                assert!(
+                    (m1.c - m2.c).abs() <= 1e-12 * denom,
+                    "trial {trial}: {:?} {} vs {}",
+                    m1.jj,
+                    m1.c,
+                    m2.c
+                );
+            }
+            assert_eq!(ab_c.size(), a_bc.size());
+        }
+
+        // truncation: at nocut=2, (x+y)^3 has no terms
+        crate::context::set_truncation_order(2);
+        let s = x.clone() + y.clone();
+        let cube = s.clone() * s.clone() * s.clone();
+        assert_eq!(cube.size(), 0);
+        crate::context::set_truncation_order(3);
+
+        // a/b*b ~ a (rtol 1e-13) for b with cons != 0
+        let a = 1.0 + x.clone() + 0.5 * z.clone();
+        let b = 2.0 + x.clone() * y.clone() - 0.3 * z.clone() * z.clone();
+        let q = a.clone() / b.clone();
+        let r = q * b;
+        for m in r.iter_monomials() {
+            let expect = a.get_coefficient(&m.jj);
+            let denom = expect.abs().max(1.0);
+            assert!(
+                (m.c - expect).abs() <= 1e-13 * denom,
+                "{:?}: {} vs {}",
+                m.jj,
+                m.c,
+                expect
+            );
+        }
+        assert_eq!(r.size(), a.size());
+
+        // divide_variable on x^2 y by (1,1) == xy; by (1,3) panics
+        let x2y = x.clone() * x.clone() * y.clone();
+        let d = x2y.clone().divide_variable(1, 1);
+        assert!((d.get_coefficient(&[1, 1, 0]) - 1.0).abs() < 1e-15);
+        assert_eq!(d.size(), 1);
+        assert_eq!(x2y.divide_variable(1, 2).get_coefficient(&[0, 1, 0]), 1.0);
+        let result = std::panic::catch_unwind(|| x2y.divide_variable(1, 3));
+        assert!(result.is_err());
+
+        // multiply_monomials: coefficient-wise product on matching indices
+        let p = (1.0 + x.clone() + y.clone()).multiply_monomials(&(2.0 + 3.0 * y.clone()));
+        assert_eq!(p.size(), 2);
+        assert!((p.cons() - 2.0).abs() < 1e-15);
+        assert!((p.get_coefficient(&[0, 1]) - 3.0).abs() < 1e-15);
+
+        // fma == weighted sum
+        let f = crate::fma(&x.clone(), 2.0, &y.clone(), -1.0);
+        assert!((f.get_coefficient(&[1, 0, 0]) - 2.0).abs() < 1e-15);
+        assert!((f.get_coefficient(&[0, 1, 0]) + 1.0).abs() < 1e-15);
     }
 }
