@@ -267,9 +267,7 @@ fn kepler() -> (Vec<Da>, Vec<Da>) {
         // the constant part is checked separately below).
         let m = onorm[1..=4].iter().copied().fold(0.0_f64, f64::max);
 
-        println!(
-            "\nenergy residual P = E(y_final) - E(y0), n = {n} steps (h = {h:.6e}):"
-        );
+        println!("\nenergy residual P = E(y_final) - E(y0), n = {n} steps (h = {h:.6e}):");
         println!("  P.const = {:+.3e}", p.cons());
         println!("  order-norm rows (infinity norm per order):");
         for (order, norm) in onorm.iter().enumerate().skip(1) {
@@ -351,7 +349,12 @@ fn validity_domain(y0: &[Da], y_final: &[Da], rng: &mut Lcg) {
     for &s in &[0.01, 0.05, 0.1, 0.2, 0.4] {
         let mut max_dev = 0.0_f64;
         for _ in 0..16 {
-            let delta = [rng.next_unit(), rng.next_unit(), rng.next_unit(), rng.next_unit()];
+            let delta = [
+                rng.next_unit(),
+                rng.next_unit(),
+                rng.next_unit(),
+                rng.next_unit(),
+            ];
             let delta = delta.map(|u| s * u);
 
             // Polynomial flow: evaluate each terminal component at δ.
