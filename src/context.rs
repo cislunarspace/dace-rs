@@ -15,8 +15,9 @@
 //! - [`init`] may be called again at any time; previously created [`Da`][crate::Da]
 //!   values keep working against their original context (in C,
 //!   `daceInitialize` purges all existing DA objects).
-//! - the truncation-order stack ([`push_truncation_order`]/[`pop_truncation_order`])
-//!   is thread-local, like all other computation settings.
+//! - after any re-initialization, every thread re-derives its computation
+//!   settings lazily on next use (in C, only the thread that called
+//!   `daceInitialize` is reset; other threads keep stale settings).
 //! - informational messages go through the [`log`] crate instead of stderr.
 
 use std::cell::{Cell, RefCell};
@@ -399,7 +400,7 @@ fn with_settings<R>(f: impl FnOnce(&Settings) -> R) -> R {
             s.eps.set(0.0);
             s.nocut.set(ctx.nomax);
             s.stack.borrow_mut().clear();
-            s.generation.set(current);
+            s.generation.set(ctx.generation);
             s.ready.set(true);
         }
         f(s)
