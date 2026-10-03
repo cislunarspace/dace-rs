@@ -26,12 +26,19 @@ pub(crate) struct RawTerm {
 /// Values created under one context keep working after
 /// [`init`][crate::init] is called again (they hold on to their original
 /// context); mixing values from different contexts in one operation panics.
+/// See the crate-level [Multithreading][crate#multithreading] section for
+/// cross-thread use.
 #[derive(Clone, Debug)]
 pub struct Da {
     pub(crate) ctx: Arc<Context>,
     /// Sorted ascending by `idx`.
     pub(crate) terms: Vec<RawTerm>,
 }
+
+const _: () = {
+    const fn assert_send_sync<T: Send + Sync>() {}
+    assert_send_sync::<Da>();
+};
 
 impl Da {
     /// The zero polynomial (also [`Da::default`]).

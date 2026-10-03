@@ -17,6 +17,39 @@
 //! // coefficient of x^2 in sin(x^2+y) at the origin is cos(0) = 1
 //! assert!((f.get_coefficient(&[2, 0]) - 1.0).abs() < 1e-14);
 //! ```
+//!
+//! # Multithreading
+//!
+//! [`Da`] and [`CompiledDa`] are `Send + Sync`: sharing them across threads
+//! (e.g. [Rayon], or PyO3's `allow_threads`) is supported. New threads need
+//! no explicit initialization — computation settings (epsilon cutoff,
+//! truncation order) and scratch buffers are lazily derived from the active
+//! context on each thread's first use.
+//!
+//! After [`init`] is called again, every thread re-derives its settings on
+//! next use, as if the thread had never been used; user-set epsilon and
+//! truncation order therefore do not survive re-initialization on any
+//! thread. Values keep operating on their original context, and mixing
+//! values from different contexts in one operation panics (existing
+//! semantics, enforced by `Da::assert_same_context`).
+//!
+//! [`Da::random`] uses a per-thread LCG seeded with a fixed identical value
+//! on every thread: parallel draws produce the same sequence on each thread,
+//! not distinct streams.
+//!
+//! ```
+//! dace_rs::init(20, 2).unwrap();
+//! let x = dace_rs::Da::variable(1);
+//! let c = std::thread::spawn(move || {
+//!     let y = dace_rs::Da::variable(2);
+//!     (x * y).get_coefficient(&[1, 1])
+//! })
+//! .join()
+//! .unwrap();
+//! assert_eq!(c, 1.0);
+//! ```
+//!
+//! [Rayon]: https://docs.rs/rayon
 
 pub mod ads;
 pub mod context;

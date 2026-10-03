@@ -269,6 +269,11 @@ pub struct CompiledDa {
     pub(crate) ac: Vec<f64>,
 }
 
+const _: () = {
+    const fn assert_send_sync<T: Send + Sync>() {}
+    assert_send_sync::<CompiledDa>();
+};
+
 impl CompiledDa {
     /// Compile several DAs (same context) into one shared tree
     /// (`daceEvalTree`).
