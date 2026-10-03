@@ -87,6 +87,35 @@ C 库本身没有测试套件，因此 `dace-rs` 直接与 C 参考实现对照�
 1. `daceReplaceVariable` 用 1 基变量号索引 0 基指数数组（文档语义是 1 基替换；实际实现相当于 `from+1 → val·(to+1)`，且 `from == nvmax` 时静默无效）。dace-rs 实现文档语义。
 2. `dacePower` 负数次幂在混叠结果上调用乘法逆，而 Newton 迭代并不混叠安全；C 返回错误系数（C 的 `pow(A,-2)` 与 C 自己的 `minv(sqr(A))` 不一致）。dace-rs 返回正确值。
 
+## 性能基准
+
+核心内核的 criterion 基准位于 `benches/kernels.rs`。`cargo bench` 运行全套（或 `cargo bench --bench kernels` 只跑该目标）；`cargo bench mul/20x6` 可过滤单个基准。
+
+乘法、初等函数（`sin`、`sqrt`、`exp`）、编译与编译求值各有两档配置：6 阶 2 变量（28 个单项式槽位）与 20 阶 6 变量（230,230 个槽位）。映射求逆只测 6/2 与 10/4 两档：20 阶 6 变量下单次近恒等映射求逆约需 29 秒（下述基线机器实测，release 构建），故只记录量级于此，不纳入常规 bench 循环。
+
+基线（criterion 默认设置，Linux x86-64，AMD Ryzen Threadripper 9960X，`bench`/release 配置，median）：
+
+| 基准 | 配置 | Median |
+|---|---|---|
+| mul/6x2 | 6 阶 2 变量 | 124 ns |
+| mul/20x6 | 20 阶 6 变量 | 137 µs |
+| sin/6x2 | 6 阶 2 变量 | 969 ns |
+| sin/20x6 | 20 阶 6 变量 | 2.68 ms |
+| sqrt/6x2 | 6 阶 2 变量 | 973 ns |
+| sqrt/20x6 | 20 阶 6 变量 | 2.61 ms |
+| exp/6x2 | 6 阶 2 变量 | 969 ns |
+| exp/20x6 | 20 阶 6 变量 | 2.64 ms |
+| compile/6x2 | 6 阶 2 变量 | 198 ns |
+| compile/20x6 | 20 阶 6 变量 | 97.4 µs |
+| eval/6x2 | 6 阶 2 变量 | 23.5 ns |
+| eval/20x6 | 20 阶 6 变量 | 33.4 ns |
+| invert/6x2 | 6 阶 2 变量 | 6.64 µs |
+| invert/10x4 | 10 阶 4 变量 | 979 µs |
+
+criterion 结果落盘于 `target/criterion/`；再次运行 `cargo bench` 会自动输出相对上次的变化（`change: [...]`），作为内核改动前后对照的推荐方式。
+
+口径说明与[平台支持](#平台支持)一致：算术内核固定累加顺序、默认浮点设置；微基准不代表普适性能结论。
+
 ## 许可证
 
 Apache-2.0。`dace-rs` 是 DACE 的衍生作品（Copyright 2016 Politecnico di Milano 及贡献者；Copyright 2014 Dinamica Srl）。参见 [LICENSE](LICENSE)、[NOTICE](NOTICE) 与 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。

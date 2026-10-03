@@ -18,6 +18,7 @@ Pure Rust implementation of [DACE](https://github.com/dacelib/dace), the Differe
 - [Platform Support](#platform-support)
 - [API Map (C++ → Rust)](#api-map-c--rust)
 - [Parity Methodology](#parity-methodology)
+- [Benchmarks](#benchmarks)
 - [License](#license)
 
 ## Why dace-rs
@@ -95,6 +96,35 @@ Two upstream C bugs are deliberately not reproduced; both divergences are docume
 
 1. `daceReplaceVariable` indexes its exponent array with 1-based variable numbers (documented semantics say 1-based replacement; implemented is effectively `from+1 → val·(to+1)`, a silent no-op for `from == nvmax`). dace-rs implements the documented semantics.
 2. `dacePower` with negative powers calls the multiplicative inverse on an aliased result, and the Newton iteration is not aliasing safe; C returns wrong coefficients (C's `pow(A,-2)` disagrees with C's own `minv(sqr(A))`). dace-rs returns the correct value.
+
+## Benchmarks
+
+Criterion benchmarks for the core kernels live in `benches/kernels.rs`. Run the full suite with `cargo bench` (or `cargo bench --bench kernels` for this target only); filter a single benchmark with e.g. `cargo bench mul/20x6`.
+
+Multiplication, the elementary functions (`sin`, `sqrt`, `exp`), compilation, and compiled evaluation are each measured in two configurations: order 6 with 2 variables (28 monomial slots) and order 20 with 6 variables (230,230 slots). Map inversion is measured at 6/2 and 10/4 instead: a single near-identity map inversion at order 20 with 6 variables takes ≈ 29 s per call (measured on the baseline machine below, release build), so that magnitude is recorded here and kept out of the regular bench loop.
+
+Baseline medians (default criterion settings, Linux x86-64, AMD Ryzen Threadripper 9960X, `bench`/release profile):
+
+| Benchmark | Config | Median |
+|---|---|---|
+| mul/6x2 | order 6, 2 vars | 124 ns |
+| mul/20x6 | order 20, 6 vars | 137 µs |
+| sin/6x2 | order 6, 2 vars | 969 ns |
+| sin/20x6 | order 20, 6 vars | 2.68 ms |
+| sqrt/6x2 | order 6, 2 vars | 973 ns |
+| sqrt/20x6 | order 20, 6 vars | 2.61 ms |
+| exp/6x2 | order 6, 2 vars | 969 ns |
+| exp/20x6 | order 20, 6 vars | 2.64 ms |
+| compile/6x2 | order 6, 2 vars | 198 ns |
+| compile/20x6 | order 20, 6 vars | 97.4 µs |
+| eval/6x2 | order 6, 2 vars | 23.5 ns |
+| eval/20x6 | order 20, 6 vars | 33.4 ns |
+| invert/6x2 | order 6, 2 vars | 6.64 µs |
+| invert/10x4 | order 10, 4 vars | 979 µs |
+
+Criterion persists results under `target/criterion/`; re-running `cargo bench` reports the change against the previous run (`change: [...]`), which is the intended before/after workflow for kernel changes.
+
+The usual caveat applies (see [Platform Support](#platform-support)): arithmetic kernels use a fixed accumulation order and default floating-point settings, and these microbenchmarks do not generalize to arbitrary workloads.
 
 ## License
 

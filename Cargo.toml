@@ -19,3 +19,8 @@ parking_lot = "0.12"
 
 [dev-dependencies]
 rayon = "1.12.0"
+criterion = "0.8"
+
+[[bench]]
+name = "kernels"
+harness = false
