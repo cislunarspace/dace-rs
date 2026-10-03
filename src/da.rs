@@ -38,7 +38,7 @@ impl Da {
     ///
     /// # Panics
     ///
-    /// Panics with [`DaceError`] if DACE has not been initialized.
+    /// Panics with [`crate::DaceError`] if DACE has not been initialized.
     pub fn new() -> Da {
         Da {
             ctx: Context::current(),
@@ -424,7 +424,7 @@ impl Da {
     ///
     /// # Panics
     ///
-    /// Panics with [`DaceError`] code 641 ("Dividing by zero") when the
+    /// Panics with [`crate::DaceError`] code 641 ("Dividing by zero") when the
     /// constant part of `self` is zero.
     pub fn minv(&self) -> Da {
         minv(self)
@@ -445,7 +445,7 @@ impl Da {
     ///
     /// # Panics
     ///
-    /// Panics with [`DaceError`] code 642 ("Inverse does not exists") when
+    /// Panics with [`crate::DaceError`] code 642 ("Inverse does not exists") when
     /// the division is impossible on a non-zero DA.
     pub fn divide_variable(&self, var: u32, p: u32) -> Da {
         let ctx = &self.ctx;
@@ -595,7 +595,7 @@ impl Div for Da {
     type Output = Da;
     /// # Panics
     ///
-    /// Panics with [`DaceError`] code 641 when `rhs` has a zero constant
+    /// Panics with [`crate::DaceError`] code 641 when `rhs` has a zero constant
     /// part (division by zero), via the multiplicative inverse.
     fn div(self, rhs: Da) -> Da {
         Da::assert_same_context(&self, &rhs);
@@ -635,7 +635,7 @@ impl Div<f64> for Da {
     type Output = Da;
     /// # Panics
     ///
-    /// Panics with [`DaceError`] code 641 when `rhs == 0.0`.
+    /// Panics with [`crate::DaceError`] code 641 when `rhs == 0.0`.
     fn div(self, rhs: f64) -> Da {
         if rhs == 0.0 {
             dace_panic(codes::DIVIDING_BY_ZERO, "Dividing by zero");

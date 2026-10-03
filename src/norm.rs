@@ -133,7 +133,7 @@ impl Da {
     ///
     /// # Panics
     ///
-    /// Panics with [`DaceError`] code 651 when `nomax < 2`.
+    /// Panics with [`crate::DaceError`] code 651 when `nomax < 2`.
     pub fn estim_norm(&self, var: u32, ityp: NormType, nc: u32) -> Vec<f64> {
         self.estim_norm_impl(var, ityp, nc, false).0
     }

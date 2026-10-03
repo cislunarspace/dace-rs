@@ -75,5 +75,6 @@ pub(crate) mod codes {
     pub const LOG_NON_POSITIVE: u32 = 647;
     pub const LOG_BASE_POSITIVE: u32 = 648;
     pub const COS_ZERO_IN_TANGENT: u32 = 649;
+    pub const TOO_MANY_VARIABLES: u32 = 165;
     pub const OUT_OF_DOMAIN: u32 = 650;
 }

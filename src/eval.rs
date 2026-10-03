@@ -275,7 +275,7 @@ impl CompiledDa {
     ///
     /// # Panics
     ///
-    /// Panics with [`DaceError`] when the DAs belong to different contexts.
+    /// Panics with [`crate::DaceError`] when the DAs belong to different contexts.
     pub fn from_das(das: &[Da]) -> CompiledDa {
         for da in das {
             Da::assert_same_context(&das[0], da);
