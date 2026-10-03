@@ -18,6 +18,7 @@
 //! assert!((f.get_coefficient(&[2, 0]) - 1.0).abs() < 1e-14);
 //! ```
 
+pub mod ads;
 pub mod context;
 pub mod error;
 pub mod monomial;
@@ -30,6 +31,7 @@ mod kernels;
 pub mod norm;
 pub mod special;
 pub mod vector;
+pub use ads::{AdsConfig, AdsLeaf, AdsResult, ToleranceKind};
 pub use context::{
     epsilon, init, initialized, machine_epsilon, max_monomials, max_order, max_variables,
     pop_truncation_order, push_truncation_order, set_epsilon, set_truncation_order,

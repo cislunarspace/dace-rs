@@ -17,7 +17,8 @@ crates.io 上已有的 [`dace`](https://crates.io/crates/dace) 是对上游 C �
 
 - `Da × Da`、`Da × f64`、`f64 × Da` 的运算符 trait（`Add`/`Sub`/`Mul`/`Div`/`Neg` 及赋值形式）；
 - DA 值在重新初始化后仍然有效（每个 `Da` 持有自己的上下文；C 会清空一切）；
-- 可恢复的失败返回 `Result`，定义域误用携带 C 错误码 panic，信息性降级通过 [`log`] crate 输出——没有粘性错误状态，没有 `exit(1)`。
+- 可恢复的失败返回 `Result`，定义域误用携带 C 错误码 panic，信息性降级通过 [`log`] crate 输出——没有粘性错误状态，没有 `exit(1)`；
+- 自动域分裂（[`ads::split`]，Rust-only 扩展，C 无对应）通过递归二分与逐块重展开，在大不确定度盒上保持多项式包围的严格性。
 
 ## 快速上手
 
@@ -70,6 +71,7 @@ fn main() {
 | `DA::read`/`write`（blob）、`operator>>`/`<<` | [`Da::to_blob`]/[`Da::from_blob`]、[`Display`]/[`FromStr`] |
 | `DASimpleFormatter` | [`SimpleFormat`] 预设与 [`format_da`] |
 | `AlgebraicVector<DA>::invert` | [`DaVector::invert`] |
+| ——（无 C 对应；Rust-only 扩展） | [`ads::split`] 及 [`AdsConfig`]/[`AdsResult`] |
 
 未移植（上游实验性/默认关闭）：`AlgebraicMatrix`、`dacecompat` 别名、MATLAB 接口。
 
@@ -93,4 +95,7 @@ Apache-2.0。`dace-rs` 是 DACE 的衍生作品（Copyright 2016 Politecnico di 
 [`CompiledDa::eval`]: https://docs.rs/dace-rs/latest/dace_rs/struct.CompiledDa.html#method.eval
 [`SimpleFormat`]: https://docs.rs/dace-rs/latest/dace_rs/io/struct.SimpleFormat.html
 [`DaVector::invert`]: https://docs.rs/dace-rs/latest/dace_rs/vector/trait.DaVector.html#tymethod.invert
+[`ads::split`]: https://docs.rs/dace-rs/latest/dace_rs/ads/fn.split.html
+[`AdsConfig`]: https://docs.rs/dace-rs/latest/dace_rs/ads/struct.AdsConfig.html
+[`AdsResult`]: https://docs.rs/dace-rs/latest/dace_rs/ads/struct.AdsResult.html
 [`log`]: https://docs.rs/log
