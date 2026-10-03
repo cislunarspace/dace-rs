@@ -7,9 +7,9 @@
 //! `K_{-k} = K_k`), then composed with the Kahan-summation derivative
 //! recurrences of DLMF 10.6. Scalar Bessel values come from
 //! [`puruspe`] (`besseljy`/`besselik`), the gamma function from
-//! [`puruspe::gamma`], and the polygamma/Hurwitz zeta from a transcription
-//! of DACE's `contrib/psi.c` (netlib PSIFN, f2c translation) and
-//! `contrib/zeta.c` (Cephes 2.8) in [`netlib_psi_zeta`].
+//! the `puruspe::gamma` function, and the polygamma/Hurwitz zeta from a
+//! transcription of DACE's `contrib/psi.c` (netlib PSIFN, f2c translation)
+//! and `contrib/zeta.c` (Cephes 2.8) in the `netlib_psi_zeta` module.
 
 use crate::context::truncation_order;
 use crate::da::Da;
@@ -238,7 +238,7 @@ fn log_gamma0(a: &Da, a0: f64) -> Da {
 ///
 /// # Panics
 ///
-/// Panics with [`DaceError`] code 650 ("Out of domain") when the constant
+/// Panics with [`crate::DaceError`] code 650 ("Out of domain") when the constant
 /// part is zero or a negative integer.
 pub fn log_gamma(a: &Da) -> Da {
     let a0 = a.cons();
@@ -255,7 +255,7 @@ pub fn log_gamma(a: &Da) -> Da {
 ///
 /// # Panics
 ///
-/// Panics with [`DaceError`] code 650 ("Out of domain") when the constant
+/// Panics with [`crate::DaceError`] code 650 ("Out of domain") when the constant
 /// part is zero or a negative integer.
 pub fn gamma(a: &Da) -> Da {
     let a0 = a.cons();
@@ -275,7 +275,7 @@ pub fn gamma(a: &Da) -> Da {
 ///
 /// # Panics
 ///
-/// Panics with [`DaceError`] code 650 ("Out of domain") when the constant
+/// Panics with [`crate::DaceError`] code 650 ("Out of domain") when the constant
 /// part is zero or a negative integer.
 pub fn psi(a: &Da, n: u32) -> Da {
     let a0 = a.cons();

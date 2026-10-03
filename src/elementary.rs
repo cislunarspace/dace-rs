@@ -3,7 +3,7 @@
 //! Ports the intrinsic-function layer of `core/dacemath.c` (lines 656-1504):
 //! each function computes the divided derivatives of the scalar function at
 //! the constant part (`xf[k]`, the Taylor coefficients in the non-constant
-//! part) and composes them via the Horner engine [`evaluate_series`].
+//! part) and composes them via the Horner engine `evaluate_series`.
 //! Domain violations panic with the numeric code and message of the C error
 //! table (e.g. 647 "Negative constant part in logarithm").
 
@@ -71,7 +71,7 @@ pub(crate) fn subtract_double(a: &Da, c: f64) -> Da {
 ///
 /// # Panics
 ///
-/// Panics with [`DaceError`] code 641 when `c == 0.0`.
+/// Panics with [`crate::DaceError`] code 641 when `c == 0.0`.
 pub(crate) fn divide_double(a: &Da, c: f64) -> Da {
     if c == 0.0 {
         dace_panic(codes::DIVIDING_BY_ZERO, "Dividing by zero");
@@ -83,7 +83,7 @@ pub(crate) fn divide_double(a: &Da, c: f64) -> Da {
 ///
 /// # Panics
 ///
-/// Panics with [`DaceError`] code 641 when the constant part of `a` is zero.
+/// Panics with [`crate::DaceError`] code 641 when the constant part of `a` is zero.
 pub(crate) fn minv(a: &Da) -> Da {
     let a0 = a.cons();
     if a0 == 0.0 {
@@ -158,13 +158,12 @@ pub fn modulo(a: &Da, p: f64) -> Da {
 // ---------------------------------------------------------------------------
 // Powers and roots (dacemath.c:690-918)
 // ---------------------------------------------------------------------------
-
 /// Raise `a` to the real power `p` (`dacePowerDouble`): integer powers go
-/// through [`powi`], otherwise `exp(p·log a)`.
+/// through [`powi`], otherwise a series in `(a - a0)/a0`.
 ///
 /// # Panics
 ///
-/// Panics with [`DaceError`] code 643 for a non-integer power of a DA with
+/// Panics with [`crate::DaceError`] code 643 for a non-integer power of a DA with
 /// non-positive constant part.
 pub fn powf(a: &Da, p: f64) -> Da {
     if p == 0.0 {
@@ -196,6 +195,13 @@ pub fn powf(a: &Da, p: f64) -> Da {
 /// Raise `a` to the integer power `np` (`dacePower`), by squaring for
 /// `|np| > 4` and hard-coded small cases, with the inverse for negative
 /// powers.
+///
+/// Divergence from C: the C implementation computes negative powers by
+/// calling `daceMultiplicativeInverse(inc, inc)` on the aliased result, and
+/// that Newton iteration is not aliasing safe despite its documentation
+/// note - C returns wrong coefficients for negative powers of non-constant
+/// DAs (verified: C's `pow(A, -2)` disagrees with C's own `minv(sqr(A))`).
+/// This implementation returns the correct value.
 pub fn powi(a: &Da, np: i32) -> Da {
     match np {
         0 => Da::constant(1.0),
@@ -236,7 +242,7 @@ pub fn powi(a: &Da, np: i32) -> Da {
 ///
 /// # Panics
 ///
-/// Panics with [`DaceError`] code 644 for `np == 0`, 645 for an even root of
+/// Panics with [`crate::DaceError`] code 644 for `np == 0`, 645 for an even root of
 /// a DA with non-positive constant part, 646 for an odd root of a zero DA.
 pub fn root(a: &Da, np: i32) -> Da {
     if np == 0 {
@@ -268,7 +274,7 @@ pub fn root(a: &Da, np: i32) -> Da {
 ///
 /// # Panics
 ///
-/// Panics with [`DaceError`] code 645 when the constant part is negative.
+/// Panics with [`crate::DaceError`] code 645 when the constant part is negative.
 pub fn sqrt(a: &Da) -> Da {
     root(a, 2)
 }
@@ -313,7 +319,7 @@ pub fn exp(a: &Da) -> Da {
 ///
 /// # Panics
 ///
-/// Panics with [`DaceError`] code 647 when the constant part is not positive.
+/// Panics with [`crate::DaceError`] code 647 when the constant part is not positive.
 pub fn log(a: &Da) -> Da {
     let a0 = a.cons();
     if a0 <= 0.0 {
@@ -338,7 +344,7 @@ pub fn log(a: &Da) -> Da {
 ///
 /// # Panics
 ///
-/// Panics with [`DaceError`] code 648 when `b` is not positive.
+/// Panics with [`crate::DaceError`] code 648 when `b` is not positive.
 pub fn log_base(a: &Da, b: f64) -> Da {
     if b <= 0.0 {
         dace_panic(
@@ -394,7 +400,7 @@ pub fn cos(a: &Da) -> Da {
 ///
 /// # Panics
 ///
-/// Panics with [`DaceError`] code 649 when the cosine of the constant part
+/// Panics with [`crate::DaceError`] code 649 when the cosine of the constant part
 /// is zero.
 pub fn tan(a: &Da) -> Da {
     if a.cons().cos() == 0.0 {
@@ -409,7 +415,7 @@ pub fn tan(a: &Da) -> Da {
 ///
 /// # Panics
 ///
-/// Panics with [`DaceError`] code 650 when `|constant part| >= 1`.
+/// Panics with [`crate::DaceError`] code 650 when `|constant part| >= 1`.
 pub fn asin(a: &Da) -> Da {
     if a.cons().abs() >= 1.0 {
         dace_panic(codes::OUT_OF_DOMAIN, "Out of domain");
@@ -424,7 +430,7 @@ pub fn asin(a: &Da) -> Da {
 ///
 /// # Panics
 ///
-/// Panics with [`DaceError`] code 650 when `|constant part| >= 1`.
+/// Panics with [`crate::DaceError`] code 650 when `|constant part| >= 1`.
 pub fn acos(a: &Da) -> Da {
     if a.cons().abs() >= 1.0 {
         dace_panic(codes::OUT_OF_DOMAIN, "Out of domain");
@@ -492,7 +498,7 @@ pub fn atan2(y: &Da, x: &Da) -> Da {
 ///
 /// # Panics
 ///
-/// Panics with [`DaceError`] code 641 when `b` has a zero constant part.
+/// Panics with [`crate::DaceError`] code 641 when `b` has a zero constant part.
 pub(crate) fn divide_da(a: &Da, b: &Da) -> Da {
     multiply(a, &minv(b))
 }
@@ -554,7 +560,7 @@ pub fn asinh(a: &Da) -> Da {
 ///
 /// # Panics
 ///
-/// Panics with [`DaceError`] code 650 when the constant part is `<= 1`.
+/// Panics with [`crate::DaceError`] code 650 when the constant part is `<= 1`.
 pub fn acosh(a: &Da) -> Da {
     if a.cons() <= 1.0 {
         dace_panic(codes::OUT_OF_DOMAIN, "Out of domain");
@@ -568,7 +574,7 @@ pub fn acosh(a: &Da) -> Da {
 ///
 /// # Panics
 ///
-/// Panics with [`DaceError`] code 650 when `|constant part| >= 1`.
+/// Panics with [`crate::DaceError`] code 650 when `|constant part| >= 1`.
 pub fn atanh(a: &Da) -> Da {
     if a.cons().abs() >= 1.0 {
         dace_panic(codes::OUT_OF_DOMAIN, "Out of domain");
