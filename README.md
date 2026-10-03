@@ -26,7 +26,8 @@ The existing [`dace`](https://crates.io/crates/dace) crate is a C-binding wrappe
 
 - operator traits (`Add`/`Sub`/`Mul`/`Div`/`Neg` + assignments) for `Da × Da`, `Da × f64`, `f64 × Da`;
 - values survive re-initialization (each `Da` keeps its context; C purges everything);
-- recoverable failures return `Result`, domain misuse panics with the C error code, informational degradation goes through the [`log`] crate — no sticky error state, no `exit(1)`.
+- recoverable failures return `Result`, domain misuse panics with the C error code, informational degradation goes through the [`log`] crate — no sticky error state, no `exit(1)`;
+- automatic domain splitting ([`ads::split`], a Rust-only extension with no C counterpart) keeps polynomial enclosures rigorous over large uncertainty boxes via recursive bisection and re-expansion.
 
 ## Quickstart
 
@@ -79,6 +80,7 @@ Arithmetic kernels use a fixed accumulation order and default floating-point set
 | `DA::read`/`write` (blob), `operator>>`/`<<` | [`Da::to_blob`]/[`Da::from_blob`], [`Display`]/[`FromStr`] |
 | `DASimpleFormatter` | [`SimpleFormat`] presets and [`format_da`] |
 | `AlgebraicVector<DA>::invert` | [`DaVector::invert`] |
+| — (no C counterpart; Rust-only extension) | [`ads::split`] with [`AdsConfig`]/[`AdsResult`] |
 
 Not ported (upstream experimental/off by default): `AlgebraicMatrix`, `dacecompat` aliases, the MATLAB interface.
 
@@ -105,4 +107,7 @@ Apache-2.0. `dace-rs` is a derivative work of DACE (Copyright 2016 Politecnico d
 [`SimpleFormat`]: https://docs.rs/dace-rs/latest/dace_rs/io/struct.SimpleFormat.html
 [`format_da`]: https://docs.rs/dace-rs/latest/dace_rs/io/fn.format_da.html
 [`DaVector::invert`]: https://docs.rs/dace-rs/latest/dace_rs/vector/trait.DaVector.html#tymethod.invert
+[`ads::split`]: https://docs.rs/dace-rs/latest/dace_rs/ads/fn.split.html
+[`AdsConfig`]: https://docs.rs/dace-rs/latest/dace_rs/ads/struct.AdsConfig.html
+[`AdsResult`]: https://docs.rs/dace-rs/latest/dace_rs/ads/struct.AdsResult.html
 [`log`]: https://docs.rs/log
