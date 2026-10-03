@@ -1,5 +1,5 @@
 # 推送 v* 标签时自动创建 GitHub Release，变更日志由 GitHub 自动生成。
-# 不含 crates.io 发布（需要 CARGO_REGISTRY_TOKEN secret，暂不引入）。
+# crates.io 发布由独立的 publish.yml 处理。
 name: Release
 
 on:
