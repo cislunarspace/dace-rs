@@ -28,6 +28,7 @@ pub(crate) fn keep(c: f64, eps: f64) -> bool {
 pub(crate) fn weighted_sum(a: &Da, afac: f64, b: &Da, bfac: f64) -> Da {
     let ctx = a.ctx.clone();
     let (eps, nocut) = eps_nocut();
+    let nocut = nocut.min(ctx.nomax);
     let mut terms: Vec<RawTerm> = Vec::with_capacity(a.terms.len() + b.terms.len());
 
     let mut ia = a.terms.iter().peekable();
@@ -133,6 +134,7 @@ thread_local! {
 pub(crate) fn multiply(a: &Da, b: &Da) -> Da {
     let ctx = a.ctx.clone();
     let (eps, nocut) = eps_nocut();
+    let nocut = nocut.min(ctx.nomax);
     let nomax = ctx.nomax as usize;
     let nmmax = ctx.nmmax as usize;
 

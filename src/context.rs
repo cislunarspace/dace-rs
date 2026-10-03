@@ -171,8 +171,10 @@ pub fn version() -> &'static str {
 ///
 /// Unlike the C library, re-initializing does **not** invalidate existing
 /// [`Da`][crate::Da] values: they keep operating on their original context.
-/// Computation settings (epsilon cutoff, truncation order) are re-initialized
-/// on the calling thread only, matching C's thread model.
+/// After any re-initialization, every thread re-derives its computation
+/// settings (epsilon cutoff, truncation order) lazily on next use, as if the
+/// thread had never been used; user-set settings therefore do not survive
+/// re-initialization on any thread.
 pub fn init(order: u32, nvars: u32) -> Result<(), DaceError> {
     let mut no = order;
     let mut nv = nvars;
@@ -269,13 +271,6 @@ pub fn init(order: u32, nvars: u32) -> Result<(), DaceError> {
     });
     *CONTEXT.write() = Some(ctx);
 
-    // Re-initialize the calling thread's settings (C daceInitializeThread0).
-    SETTINGS.with(|s| {
-        s.eps.set(0.0);
-        s.nocut.set(no);
-        s.ready.set(true);
-        s.stack.borrow_mut().clear();
-    });
     Ok(())
 }
 
@@ -376,6 +371,7 @@ struct Settings {
     eps: Cell<f64>,
     nocut: Cell<u32>,
     ready: Cell<bool>,
+    generation: Cell<u64>,
     stack: RefCell<Vec<u32>>,
 }
 
@@ -385,19 +381,25 @@ thread_local! {
             eps: Cell::new(0.0),
             nocut: Cell::new(0),
             ready: Cell::new(false),
+            generation: Cell::new(0),
             stack: RefCell::new(Vec::new()),
         }
     };
 }
 
 /// Lazily initialize this thread's settings from the active context on first
-/// use (C `daceInitializeThread0`: eps = 0, nocut = nomax).
+/// use, and re-derive them whenever the context generation advances (a new
+/// [`init`]) — on every thread, not just the initializing one (C
+/// `daceInitializeThread0`: eps = 0, nocut = nomax).
 fn with_settings<R>(f: impl FnOnce(&Settings) -> R) -> R {
     SETTINGS.with(|s| {
-        if !s.ready.get() {
-            let ctx = Context::current();
+        let current = GENERATION.load(Ordering::Relaxed);
+        if !s.ready.get() || s.generation.get() != current {
+            let ctx = Context::current(); // panics (1003) when never initialized
             s.eps.set(0.0);
             s.nocut.set(ctx.nomax);
+            s.stack.borrow_mut().clear();
+            s.generation.set(current);
             s.ready.set(true);
         }
         f(s)
